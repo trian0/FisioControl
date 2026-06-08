@@ -1,0 +1,129 @@
+# =============================================================================
+# codemagic.yaml — Compose Multiplatform (Android + iOS) — Plano Gratuito
+# =============================================================================
+
+workflows:
+
+  # ---------------------------------------------------------------------------
+  # ANDROID — APK de debug
+  # ---------------------------------------------------------------------------
+  android-debug:
+    name: Android Debug Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+
+    environment:
+      java: 17
+
+    scripts:
+      - name: Permissão ao gradlew
+        script: chmod +x gradlew
+
+      - name: Build APK debug
+        script: ./gradlew :composeApp:assembleDebug
+
+    artifacts:
+      - composeApp/build/outputs/apk/debug/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - thalesrian0@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ---------------------------------------------------------------------------
+  # iOS — .ipa sem conta paga (AltStore / Sideloadly)
+  # ---------------------------------------------------------------------------
+  ios-free:
+    name: iOS Build (AltStore / Sideloadly)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    environment:
+      xcode: latest
+      cocoapods: default
+      java: 17
+
+    scripts:
+      - name: Permissão ao gradlew
+        script: chmod +x gradlew
+
+      - name: Gerar projeto Xcode via Gradle
+        script: |
+          ./gradlew :composeApp:generateXcodeProject 2>/dev/null \
+          || ./gradlew :iosApp:generateXcodeProject 2>/dev/null \
+          || ./gradlew podspec 2>/dev/null \
+          || echo "Nenhuma task de geração encontrada, continuando..."
+
+          echo "=== Estrutura após geração ==="
+          find . -name "*.xcworkspace" -not -path "*/Pods/*" 2>/dev/null
+          find . -name "*.xcodeproj"   -not -path "*/Pods/*" 2>/dev/null
+          find . -name "Podfile"       -not -path "*/Pods/*" 2>/dev/null
+
+      - name: Instalar CocoaPods (se houver Podfile)
+        script: |
+          PODFILE=$(find . -name "Podfile" -not -path "*/Pods/*" | head -1)
+          if [ -n "$PODFILE" ]; then
+            echo "Podfile encontrado em: $PODFILE"
+            cd "$(dirname "$PODFILE")"
+            pod install || pod install --repo-update
+          else
+            echo "Nenhum Podfile — pulando CocoaPods."
+          fi
+
+      - name: Build e archive sem assinatura
+        script: |
+          WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/Pods/*" | head -1)
+          PROJECT=$(find . -name "*.xcodeproj"     -not -path "*/Pods/*" | head -1)
+
+          if [ -n "$WORKSPACE" ]; then
+            SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+            echo "Usando workspace: $WORKSPACE | scheme: $SCHEME"
+            xcodebuild \
+              -workspace "$WORKSPACE" \
+              -scheme "$SCHEME" \
+              -configuration Debug \
+              -destination 'generic/platform=iOS' \
+              -archivePath "$CM_BUILD_DIR/iosApp.xcarchive" \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_ALLOWED=NO \
+              archive
+          elif [ -n "$PROJECT" ]; then
+            SCHEME=$(basename "$PROJECT" .xcodeproj)
+            echo "Usando project: $PROJECT | scheme: $SCHEME"
+            xcodebuild \
+              -project "$PROJECT" \
+              -scheme "$SCHEME" \
+              -configuration Debug \
+              -destination 'generic/platform=iOS' \
+              -archivePath "$CM_BUILD_DIR/iosApp.xcarchive" \
+              CODE_SIGN_IDENTITY="" \
+              CODE_SIGNING_ALLOWED=NO \
+              archive
+          else
+            echo "ERRO: Nenhum .xcworkspace ou .xcodeproj encontrado!"
+            exit 1
+          fi
+
+      - name: Empacotar .ipa para sideload
+        script: |
+          mkdir -p "$CM_BUILD_DIR/Payload"
+          APP_PATH=$(find "$CM_BUILD_DIR/iosApp.xcarchive/Products/Applications" -name "*.app" | head -1)
+          echo "App encontrado: $APP_PATH"
+          cp -r "$APP_PATH" "$CM_BUILD_DIR/Payload/"
+          cd "$CM_BUILD_DIR"
+          zip -r iosApp.ipa Payload/
+          echo "✅ .ipa gerado!"
+
+    artifacts:
+      - $CM_BUILD_DIR/iosApp.ipa
+
+    publishing:
+      email:
+        recipients:
+          - thalesrian0@gmail.com
+        notify:
+          success: true
+          failure: true
