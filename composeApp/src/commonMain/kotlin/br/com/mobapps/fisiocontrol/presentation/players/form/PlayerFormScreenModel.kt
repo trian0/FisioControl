@@ -55,8 +55,11 @@ class PlayerFormScreenModel(
         _uiState.update {
             it.copy(
                 fullName  = player.fullName,
-                birthDate = player.birthDate?.let {
-                    "%02d%02d%04d".format(it.dayOfMonth, it.monthNumber, it.year)
+                birthDate = player.birthDate?.let { date ->
+                    val day   = date.dayOfMonth.toString().padStart(2, '0')
+                    val month = date.monthNumber.toString().padStart(2, '0')
+                    val year  = date.year.toString().padStart(4, '0')
+                    "$day$month$year"
                 } ?: "",
                 position  = player.position ?: "",
                 team      = player.team ?: "",

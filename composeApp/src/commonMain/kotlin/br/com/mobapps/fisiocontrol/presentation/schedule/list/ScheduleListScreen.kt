@@ -42,7 +42,7 @@ import org.koin.core.parameter.parametersOf
 data class ScheduleListScreen(val playerId: String) : Screen {
     @Composable
     override fun Content() {
-        val nav   = LocalNavigator.currentOrThrow
+        val nav = LocalNavigator.currentOrThrow
         val model = getScreenModel<ScheduleListScreenModel> { parametersOf(playerId) }
         val state by model.uiState.collectAsState()
 
@@ -65,14 +65,27 @@ data class ScheduleListScreen(val playerId: String) : Screen {
                     Modifier.fillMaxSize().padding(padding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
-                ) { Text("Nenhum cronograma cadastrado", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                ) {
+                    Text(
+                        "Nenhum cronograma cadastrado",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(padding),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(state.schedules, key = { it.id }) { schedule ->
-                        ScheduleCard(schedule) { nav.push(ScheduleFormScreen(playerId, schedule.id)) }
+                        ScheduleCard(schedule) {
+                            nav.push(
+                                ScheduleFormScreen(
+                                    playerId,
+                                    schedule.id
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -83,27 +96,36 @@ data class ScheduleListScreen(val playerId: String) : Screen {
 @Composable
 private fun ScheduleCard(schedule: TreatmentSchedule, onClick: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(schedule.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(
+                    schedule.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
                 Badge(
                     containerColor = when (schedule.status) {
-                        ScheduleStatus.ACTIVE    -> MaterialTheme.colorScheme.primary
+                        ScheduleStatus.ACTIVE -> MaterialTheme.colorScheme.primary
                         ScheduleStatus.COMPLETED -> MaterialTheme.colorScheme.secondary
-                        ScheduleStatus.PAUSED    -> MaterialTheme.colorScheme.error
+                        ScheduleStatus.PAUSED -> MaterialTheme.colorScheme.error
                     }
                 ) { Text(schedule.status.label) }
             }
+            val startDate = schedule.startDate
             Text(
-                "Início: %02d/%02d/%04d  ·  ${schedule.sessionsPerWeek}x/semana".format(
-                    schedule.startDate.dayOfMonth,
-                    schedule.startDate.monthNumber,
-                    schedule.startDate.year
-                ),
+                "Início: ${
+                    startDate.dayOfMonth.toString().padStart(2, '0')
+                }/${startDate.monthNumber.toString().padStart(2, '0')}/${
+                    startDate.year.toString().padStart(4, '0')
+                }  ·  ${schedule.sessionsPerWeek}x/semana",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

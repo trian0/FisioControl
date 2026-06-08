@@ -44,7 +44,7 @@ import org.koin.core.parameter.parametersOf
 data class PlayerDetailScreen(val playerId: String) : Screen {
     @Composable
     override fun Content() {
-        val nav   = LocalNavigator.currentOrThrow
+        val nav = LocalNavigator.currentOrThrow
         val model = getScreenModel<PlayerDetailScreenModel> { parametersOf(playerId) }
         val state by model.uiState.collectAsState()
 
@@ -99,16 +99,24 @@ private fun PlayerDetailContent(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                InfoRow("Nome",      player.fullName)
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                InfoRow("Nome", player.fullName)
+                val birthDate = player.birthDate
                 if (player.birthDate != null) InfoRow(
                     "Nascimento",
-                    "%02d/%02d/%04d".format(player.birthDate.dayOfMonth, player.birthDate.monthNumber, player.birthDate.year)
+                    "${
+                        birthDate.dayOfMonth.toString().padStart(2, '0')
+                    }/${
+                        birthDate.monthNumber.toString().padStart(2, '0')
+                    }/${birthDate.year.toString().padStart(4, '0')}"
                 )
-                if (!player.position.isNullOrBlank())   InfoRow("Posição",    player.position)
-                if (!player.team.isNullOrBlank())       InfoRow("Equipe",     player.team)
-                if (!player.phone.isNullOrBlank())      InfoRow("Telefone",   player.phone)
-                if (!player.notes.isNullOrBlank())      InfoRow("Observações", player.notes)
+                if (!player.position.isNullOrBlank()) InfoRow("Posição", player.position)
+                if (!player.team.isNullOrBlank()) InfoRow("Equipe", player.team)
+                if (!player.phone.isNullOrBlank()) InfoRow("Telefone", player.phone)
+                if (!player.notes.isNullOrBlank()) InfoRow("Observações", player.notes)
             }
         }
 

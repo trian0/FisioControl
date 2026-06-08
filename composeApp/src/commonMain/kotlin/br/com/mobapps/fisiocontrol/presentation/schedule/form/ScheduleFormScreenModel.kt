@@ -50,11 +50,11 @@ class ScheduleFormScreenModel(
             it.copy(
                 title            = schedule.title,
                 weeklyPlanning   = schedule.weeklyPlanning ?: "",
-                startDate        = "%02d%02d%04d".format(
-                    schedule.startDate.dayOfMonth,
-                    schedule.startDate.monthNumber,
-                    schedule.startDate.year
-                ),
+                startDate = schedule.startDate.run {
+                    dayOfMonth.toString().padStart(2,'0') +
+                            monthNumber.toString().padStart(2,'0') +
+                            year.toString().padStart(4,'0')
+                },
                 status           = schedule.status,
                 sessionsPerWeek  = schedule.sessionsPerWeek,
                 weeklyAssessment = schedule.weeklyAssessment ?: ""

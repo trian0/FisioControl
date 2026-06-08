@@ -44,7 +44,7 @@ import org.koin.core.parameter.parametersOf
 data class EvolutionListScreen(val playerId: String) : Screen {
     @Composable
     override fun Content() {
-        val nav   = LocalNavigator.currentOrThrow
+        val nav = LocalNavigator.currentOrThrow
         val model = getScreenModel<EvolutionListScreenModel> { parametersOf(playerId) }
         val state by model.uiState.collectAsState()
 
@@ -67,7 +67,13 @@ data class EvolutionListScreen(val playerId: String) : Screen {
                     Modifier.fillMaxSize().padding(padding),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
-                ) { Text("Nenhuma evolução registrada", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                ) {
+                    Text(
+                        "Nenhuma evolução registrada",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(padding),
                     contentPadding = PaddingValues(16.dp),
@@ -93,16 +99,27 @@ private fun EvolutionCard(ev: DailyEvolution) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                val sessionDate = ev.sessionDate
                 Text(
-                    "%02d/%02d/%04d".format(ev.sessionDate.dayOfMonth, ev.sessionDate.monthNumber, ev.sessionDate.year),
+                    "${sessionDate.dayOfMonth.toString().padStart(2, '0')}/${
+                        sessionDate.monthNumber.toString().padStart(2, '0')
+                    }/${sessionDate.year.toString().padStart(4, '0')}",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 ev.physiotherapyProcedures?.let {
-                    Text("Procedimentos: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "Condutas: $it",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 ev.objectiveNote?.let {
-                    Text("Objetivo: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "Objetivo: $it",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             ev.painScale?.let { PainBadge(it) }
