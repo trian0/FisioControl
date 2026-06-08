@@ -62,3 +62,4 @@ composeMultiplatform     = { id = "org.jetbrains.compose",                     v
 composeCompiler          = { id = "org.jetbrains.kotlin.plugin.compose",       version.ref = "kotlin" }
 sqldelight               = { id = "app.cash.sqldelight",                       version.ref = "sqldelight" }
 iconGenerator            = { id = "io.github.qamarelsafadi.kmp.app.icon.generator", version.ref = "iconGenerator"}
+kotlinCocoapods          = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "kotlin" }

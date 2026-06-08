@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.iconGenerator)
+    alias(libs.plugins.kotlinCocoapods)
 }
 
 val localProps = Properties().apply {
@@ -27,6 +28,18 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
+    }
+
+    cocoapods {
+        summary = "FisioControl Shared Module"
+        homepage = "https://github.com/trian0/FisioControl"
+        version = "1.0"
+        ios.deploymentTarget = "16.0"
+        framework {
+            baseName = "ComposeApp"
+            isStatic = true
+        }
+        podfile = project.file("../iosApp/Podfile")
     }
 
     sourceSets {
