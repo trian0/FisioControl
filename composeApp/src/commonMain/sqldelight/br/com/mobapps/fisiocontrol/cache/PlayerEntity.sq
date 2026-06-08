@@ -1,0 +1,25 @@
+CREATE TABLE PlayerEntity (
+    id           TEXT NOT NULL PRIMARY KEY,
+    full_name    TEXT NOT NULL,
+    birth_date   TEXT,
+    position     TEXT,
+    team         TEXT,
+    phone        TEXT,
+    photo_url    TEXT,
+    notes        TEXT,
+    is_active    INTEGER NOT NULL DEFAULT 1,
+    updated_at   TEXT NOT NULL
+);
+
+insertPlayer:
+INSERT OR REPLACE INTO PlayerEntity
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAllActive:
+SELECT * FROM PlayerEntity WHERE is_active = 1 ORDER BY full_name ASC;
+
+selectById:
+SELECT * FROM PlayerEntity WHERE id = ?;
+
+deleteById:
+DELETE FROM PlayerEntity WHERE id = ?;

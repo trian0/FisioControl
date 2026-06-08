@@ -1,0 +1,17 @@
+CREATE TABLE EvolutionEntity (
+    id               TEXT NOT NULL PRIMARY KEY,
+    player_id        TEXT NOT NULL,
+    schedule_id      TEXT,
+    session_date     TEXT NOT NULL,
+    pain_scale       INTEGER,
+    physiotherapy_procedures TEXT,
+    objective_note   TEXT,
+    created_at       TEXT NOT NULL
+);
+
+insertEvolution:
+INSERT OR REPLACE INTO EvolutionEntity
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectEvolutionsByPlayer:
+SELECT * FROM EvolutionEntity WHERE player_id = ? ORDER BY session_date DESC;

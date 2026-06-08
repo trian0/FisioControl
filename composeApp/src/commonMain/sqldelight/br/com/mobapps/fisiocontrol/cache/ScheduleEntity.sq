@@ -1,0 +1,21 @@
+CREATE TABLE ScheduleEntity (
+    id                 TEXT NOT NULL PRIMARY KEY,
+    player_id          TEXT NOT NULL,
+    title              TEXT NOT NULL,
+    weekly_planning    TEXT,
+    start_date         TEXT NOT NULL,
+    status             TEXT NOT NULL,
+    weekly_assessment  TEXT,
+    sessions_per_week  INTEGER NOT NULL,
+    updated_at         TEXT NOT NULL
+);
+
+insertSchedule:
+INSERT OR REPLACE INTO ScheduleEntity
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectSchedulesByPlayer:
+SELECT * FROM ScheduleEntity WHERE player_id = ? ORDER BY start_date DESC;
+
+selectScheduleById:
+SELECT * FROM ScheduleEntity WHERE id = ? LIMIT 1;
