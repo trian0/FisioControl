@@ -12,7 +12,7 @@ import org.koin.dsl.module
 
 val repositoryModule = module {
     single<AuthRepository>      { AuthRepositoryImpl(get()) }
-    single<PlayerRepository>    { PlayerRepositoryImpl(get(), get()) }
-    single<ScheduleRepository>  { ScheduleRepositoryImpl(get(), get()) }
-    single<EvolutionRepository> { EvolutionRepositoryImpl(get(), get()) }
+    single<PlayerRepository>    { PlayerRepositoryImpl(get(), getOrNull()) }
+    single<ScheduleRepository>  { ScheduleRepositoryImpl(get(), getOrNull()) }
+    single<EvolutionRepository> { EvolutionRepositoryImpl(get(), getOrNull()) }
 }

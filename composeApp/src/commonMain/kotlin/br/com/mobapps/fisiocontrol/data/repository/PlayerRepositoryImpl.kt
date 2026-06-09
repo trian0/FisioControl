@@ -8,11 +8,13 @@ import br.com.mobapps.fisiocontrol.domain.model.Player
 import br.com.mobapps.fisiocontrol.domain.repository.PlayerRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 
 class PlayerRepositoryImpl(
     private val supabase: SupabaseClient,
-    private val db: FisioDatabase
+    private val db: FisioDatabase?
 ) : PlayerRepository {
 
     override suspend fun getPlayers(): Result<List<Player>> = runCatching {
@@ -24,7 +26,10 @@ class PlayerRepositoryImpl(
         players.forEach { cachePlayer(it) }
         players
     }.recoverCatching {
-        db.playerEntityQueries.selectAllActive().executeAsList().map { e ->
+        val localDb = db ?: throw it
+        withContext(Dispatchers.Default) {
+            localDb.playerEntityQueries.selectAllActive().executeAsList()
+        }.map { e ->
             Player(
                 id = e.id, fullName = e.full_name,
                 birthDate = e.birth_date?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
@@ -61,21 +66,28 @@ class PlayerRepositoryImpl(
     override suspend fun deactivatePlayer(id: String): Result<Unit> = runCatching {
         supabase.from("players")
             .update({ set("is_active", false) }) { filter { eq("id", id) } }
-        db.playerEntityQueries.deleteById(id)
+        db?.let { localDb ->
+            withContext(Dispatchers.Default) {
+                localDb.playerEntityQueries.deleteById(id)
+            }
+        }
     }
 
-    private fun cachePlayer(p: Player) {
-        db.playerEntityQueries.insertPlayer(
-            id         = p.id,
-            full_name  = p.fullName,
-            birth_date = p.birthDate?.toString(),
-            position   = p.position,
-            team       = p.team,
-            phone      = p.phone,
-            photo_url  = p.photoUrl,
-            notes      = p.notes,
-            is_active  = if (p.isActive) 1L else 0L,
-            updated_at = p.updatedAt
-        )
+    private suspend fun cachePlayer(p: Player) {
+        val localDb = db ?: return
+        withContext(Dispatchers.Default) {
+            localDb.playerEntityQueries.insertPlayer(
+                id         = p.id,
+                full_name  = p.fullName,
+                birth_date = p.birthDate?.toString(),
+                position   = p.position,
+                team       = p.team,
+                phone      = p.phone,
+                photo_url  = p.photoUrl,
+                notes      = p.notes,
+                is_active  = if (p.isActive) 1L else 0L,
+                updated_at = p.updatedAt
+            )
+        }
     }
 }

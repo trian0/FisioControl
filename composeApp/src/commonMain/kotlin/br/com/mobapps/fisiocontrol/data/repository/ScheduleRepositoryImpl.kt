@@ -9,10 +9,12 @@ import kotlinx.datetime.LocalDate
 import br.com.mobapps.fisiocontrol.domain.repository.ScheduleRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class ScheduleRepositoryImpl(
     private val supabase: SupabaseClient,
-    private val db: FisioDatabase
+    private val db: FisioDatabase?
 ) : ScheduleRepository {
 
     override suspend fun getSchedulesByPlayer(playerId: String): Result<List<TreatmentSchedule>> =
@@ -25,7 +27,10 @@ class ScheduleRepositoryImpl(
             schedules.forEach { cacheSchedule(it) }
             schedules
         }.recoverCatching {
-            db.scheduleEntityQueries.selectSchedulesByPlayer(playerId).executeAsList().map { e ->
+            val localDb = db ?: throw it
+            withContext(Dispatchers.Default) {
+                localDb.scheduleEntityQueries.selectSchedulesByPlayer(playerId).executeAsList()
+            }.map { e ->
                 TreatmentSchedule(
                     id               = e.id,
                     playerId         = e.player_id,
@@ -52,7 +57,10 @@ class ScheduleRepositoryImpl(
                 .toDomain()
                 .also { cacheSchedule(it) }
         }.recoverCatching {
-            db.scheduleEntityQueries.selectScheduleById(id).executeAsOne().let { e ->
+            val localDb = db ?: throw it
+            withContext(Dispatchers.Default) {
+                localDb.scheduleEntityQueries.selectScheduleById(id).executeAsOne()
+            }.let { e ->
                 TreatmentSchedule(
                     id               = e.id,
                     playerId         = e.player_id,
@@ -89,17 +97,20 @@ class ScheduleRepositoryImpl(
                 .also { cacheSchedule(it) }
         }
 
-    private fun cacheSchedule(s: TreatmentSchedule) {
-        db.scheduleEntityQueries.insertSchedule(
-            id                = s.id,
-            player_id         = s.playerId,
-            title             = s.title,
-            weekly_planning   = s.weeklyPlanning,
-            start_date        = s.startDate.toString(),
-            status            = s.status.name.lowercase(),
-            weekly_assessment = s.weeklyAssessment,
-            sessions_per_week = s.sessionsPerWeek.toLong(),
-            updated_at        = s.updatedAt
-        )
+    private suspend fun cacheSchedule(s: TreatmentSchedule) {
+        val localDb = db ?: return
+        withContext(Dispatchers.Default) {
+            localDb.scheduleEntityQueries.insertSchedule(
+                id                = s.id,
+                player_id         = s.playerId,
+                title             = s.title,
+                weekly_planning   = s.weeklyPlanning,
+                start_date        = s.startDate.toString(),
+                status            = s.status.name.lowercase(),
+                weekly_assessment = s.weeklyAssessment,
+                sessions_per_week = s.sessionsPerWeek.toLong(),
+                updated_at        = s.updatedAt
+            )
+        }
     }
 }

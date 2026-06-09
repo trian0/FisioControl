@@ -1,3 +1,5 @@
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+
 import java.util.Properties
 
 plugins {
@@ -14,6 +16,30 @@ plugins {
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) load(f.inputStream())
+}
+
+val wasmJsAppConfigDir = layout.buildDirectory.dir("generated/wasmJsAppConfig")
+
+val generateWasmJsAppConfig by tasks.registering {
+    val outputDir = wasmJsAppConfigDir
+    val supabaseUrl = localProps["SUPABASE_URL"]?.toString() ?: ""
+    val supabaseAnonKey = localProps["SUPABASE_ANON_KEY"]?.toString() ?: ""
+    outputs.dir(outputDir)
+    doLast {
+        val pkgDir = outputDir.get().asFile
+            .resolve("br/com/mobapps/fisiocontrol/di")
+            .apply { mkdirs() }
+        pkgDir.resolve("AppConfig.wasmJs.kt").writeText(
+            """
+            package br.com.mobapps.fisiocontrol.di
+
+            actual object AppConfig {
+                actual val supabaseUrl: String = "$supabaseUrl"
+                actual val supabaseAnonKey: String = "$supabaseAnonKey"
+            }
+            """.trimIndent()
+        )
+    }
 }
 
 kotlin {
@@ -40,6 +66,13 @@ kotlin {
             isStatic = true
         }
         podfile = project.file("../iosApp/Podfile")
+        extraSpecAttributes["libraries"] = "'c++', 'sqlite3'"
+    }
+
+    wasmJs {
+        moduleName = "composeApp"
+        browser()
+        binaries.executable()
     }
 
     sourceSets {
@@ -84,6 +117,14 @@ kotlin {
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
             implementation(libs.sqldelight.native.driver)
+        }
+
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js)
+        }
+
+        wasmJsMain {
+            kotlin.srcDir(generateWasmJsAppConfig)
         }
     }
 }

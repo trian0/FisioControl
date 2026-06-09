@@ -1,6 +1,7 @@
 local.properties
 *.iml
 .gradle
+.kotlin/
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -19,3 +20,4 @@ DerivedData/
 *.hmap
 *.ipa
 Pods/
+iosApp/iosApp/Secrets.plist

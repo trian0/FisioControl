@@ -8,7 +8,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import br.com.mobapps.fisiocontrol.di.databaseModule
 import br.com.mobapps.fisiocontrol.di.networkModule
 import br.com.mobapps.fisiocontrol.di.repositoryModule
 import br.com.mobapps.fisiocontrol.di.screenModelModule
@@ -27,7 +26,7 @@ import org.koin.core.module.Module
 @Composable
 fun App(platformModule: Module) {
     KoinApplication(application = {
-        modules(platformModule, networkModule, databaseModule, repositoryModule, useCaseModule, screenModelModule)
+        modules(platformModule, networkModule, repositoryModule, useCaseModule, screenModelModule)
     }) {
         AppContent()
     }

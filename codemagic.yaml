@@ -1,5 +1,5 @@
 # =============================================================================
-# codemagic.yaml — Compose Multiplatform (Android + iOS)
+# codemagic.yaml — Compose Multiplatform (Android + iOS + Web)
 # =============================================================================
 
 workflows:
@@ -28,6 +28,47 @@ workflows:
 
     artifacts:
       - composeApp/build/outputs/apk/debug/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - thalesrian0@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ---------------------------------------------------------------------------
+  # WEB — build Kotlin/Wasm (distribuição estática)
+  # ---------------------------------------------------------------------------
+  web-build:
+    name: Web Build (Kotlin/Wasm)
+    max_build_duration: 30
+    instance_type: linux_x2
+
+    environment:
+      java: 17
+      vars:
+        SUPABASE_URL: $SUPABASE_URL
+        SUPABASE_ANON_KEY: $SUPABASE_ANON_KEY
+
+    scripts:
+      - name: Preparar gradlew
+        script: |
+          if [ ! -f "gradlew" ]; then
+            gradle wrapper --gradle-version 8.5
+          fi
+          chmod +x gradlew
+
+      - name: Criar local.properties com variáveis do Supabase
+        script: |
+          echo "SUPABASE_URL=$SUPABASE_URL"           >> local.properties
+          echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> local.properties
+
+      - name: Build distribuição Web (wasmJs)
+        script: ./gradlew :composeApp:wasmJsBrowserDistribution
+
+    artifacts:
+      - composeApp/build/dist/wasmJs/productionExecutable/**
 
     publishing:
       email:

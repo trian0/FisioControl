@@ -60,7 +60,27 @@ Adicione as chaves no `Info.plist` do iosApp:
 
 ---
 
-## 5. Arquitetura
+## 5. Web (Kotlin/Wasm)
+
+1. Configure o `local.properties` como no passo 2 (SUPABASE_URL / SUPABASE_ANON_KEY)
+   — o Gradle gera automaticamente `AppConfig.wasmJs.kt` a partir desses valores.
+2. Rodar em modo desenvolvimento (hot-reload em `http://localhost:8080`):
+   ```bash
+   ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
+   ```
+3. Gerar build de produção:
+   ```bash
+   ./gradlew :composeApp:wasmJsBrowserDistribution
+   ```
+   Saída em `composeApp/build/dist/wasmJs/productionExecutable/` — hospede em qualquer
+   servidor estático (Netlify, Vercel, GitHub Pages, Supabase Storage, etc.)
+
+> **Importante**: a versão Web **não possui cache local** (sem SQLDelight). Todas as
+> operações dependem de conectividade direta com o Supabase; não há modo offline.
+
+---
+
+## 6. Arquitetura
 
 ```
 App.kt
@@ -77,5 +97,5 @@ App.kt
 ### Camadas
 - **presentation/** — Composables + ScreenModels (Voyager)
 - **domain/** — modelos, interfaces de repositório, use cases
-- **data/** — DTOs, datasources Supabase, implementações de repositório, cache SQLDelight
+- **data/** — DTOs, datasources Supabase, implementações de repositório, cache SQLDelight (somente Android/iOS — Web opera 100% online contra o Supabase)
 - **di/** — módulos Koin

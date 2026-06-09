@@ -7,11 +7,13 @@ import br.com.mobapps.fisiocontrol.domain.model.DailyEvolution
 import br.com.mobapps.fisiocontrol.domain.repository.EvolutionRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 
 class EvolutionRepositoryImpl(
     private val supabase: SupabaseClient,
-    private val db: FisioDatabase
+    private val db: FisioDatabase?
 ) : EvolutionRepository {
 
     override suspend fun getEvolutionsByPlayer(playerId: String): Result<List<DailyEvolution>> =
@@ -24,7 +26,10 @@ class EvolutionRepositoryImpl(
             evolutions.forEach { cacheEvolution(it) }
             evolutions
         }.recoverCatching {
-            db.evolutionEntityQueries.selectEvolutionsByPlayer(playerId).executeAsList().map { e ->
+            val localDb = db ?: throw it
+            withContext(Dispatchers.Default) {
+                localDb.evolutionEntityQueries.selectEvolutionsByPlayer(playerId).executeAsList()
+            }.map { e ->
                 DailyEvolution(
                     id = e.id, playerId = e.player_id, scheduleId = e.schedule_id,
                     sessionDate = LocalDate.parse(e.session_date), painScale = e.pain_scale?.toInt(),
@@ -43,16 +48,19 @@ class EvolutionRepositoryImpl(
                 .also { cacheEvolution(it) }
         }
 
-    private fun cacheEvolution(e: DailyEvolution) {
-        db.evolutionEntityQueries.insertEvolution(
-            id              = e.id,
-            player_id       = e.playerId,
-            schedule_id     = e.scheduleId,
-            session_date    = e.sessionDate.toString(),
-            pain_scale      = e.painScale?.toLong(),
-            physiotherapy_procedures = e.physiotherapyProcedures,
-            objective_note  = e.objectiveNote,
-            created_at      = e.createdAt
-        )
+    private suspend fun cacheEvolution(e: DailyEvolution) {
+        val localDb = db ?: return
+        withContext(Dispatchers.Default) {
+            localDb.evolutionEntityQueries.insertEvolution(
+                id              = e.id,
+                player_id       = e.playerId,
+                schedule_id     = e.scheduleId,
+                session_date    = e.sessionDate.toString(),
+                pain_scale      = e.painScale?.toLong(),
+                physiotherapy_procedures = e.physiotherapyProcedures,
+                objective_note  = e.objectiveNote,
+                created_at      = e.createdAt
+            )
+        }
     }
 }
