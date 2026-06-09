@@ -7,7 +7,7 @@ Pod::Spec.new do |spec|
     spec.license                  = ''
     spec.summary                  = 'FisioControl Shared Module'
     spec.vendored_frameworks      = 'build/cocoapods/framework/ComposeApp.framework'
-    spec.libraries                = 'c++'
+    spec.libraries                = 'c++', 'sqlite3'
     spec.ios.deployment_target    = '16.0'
                 
                 

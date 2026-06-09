@@ -40,6 +40,7 @@ kotlin {
             isStatic = true
         }
         podfile = project.file("../iosApp/Podfile")
+        extraSpecAttributes["libraries"] = "'c++', 'sqlite3'"
     }
 
     sourceSets {
