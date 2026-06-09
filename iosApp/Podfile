@@ -2,5 +2,16 @@ platform :ios, '16.0'
 use_frameworks!
 
 target 'iosApp' do
+  use_frameworks!
   pod 'composeApp', :path => '../composeApp'
+
+  # Required to provide SQLite symbols for Kotlin/Native SQLiter
+  post_install do |installer|
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_LDFLAGS'] << '-lsqlite3'
+      end
+    end
+  end
 end
