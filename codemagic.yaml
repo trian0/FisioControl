@@ -1,5 +1,5 @@
 # =============================================================================
-# codemagic.yaml — Compose Multiplatform (Android + iOS) — Plano Gratuito
+# codemagic.yaml — Compose Multiplatform (Android + iOS)
 # =============================================================================
 
 workflows:
@@ -32,7 +32,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - seu@email.com
+          - thalesrian0@gmail.com
         notify:
           success: true
           failure: true
@@ -63,37 +63,85 @@ workflows:
 
       - name: Criar local.properties com variáveis do Supabase
         script: |
-          echo "SUPABASE_URL=$SUPABASE_URL"         >> local.properties
+          echo "SUPABASE_URL=$SUPABASE_URL"           >> local.properties
           echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> local.properties
+
+      - name: Gerar framework dummy do Kotlin
+        script: ./gradlew :composeApp:generateDummyFramework
 
       - name: Instalar CocoaPods
         script: |
           cd iosApp
           pod install || pod install --repo-update
 
+      - name: Corrigir paths do iosApp (Assets + Swift)
+        script: |
+          # Assets.xcassets — copiar em vez de symlink (actool não funciona com symlink)
+          REAL_ASSETS="$(pwd)/iosApp/iosApp/Assets.xcassets"
+          EXPECTED_ASSETS="$(pwd)/iosApp/Assets.xcassets"
+
+          if [ ! -d "$EXPECTED_ASSETS" ]; then
+            if [ -d "$REAL_ASSETS" ]; then
+              cp -R "$REAL_ASSETS" "$EXPECTED_ASSETS"
+              echo "✅ Assets.xcassets copiado para $EXPECTED_ASSETS"
+            else
+              echo "❌ Assets.xcassets não encontrado em $REAL_ASSETS"
+              exit 1
+            fi
+          else
+            echo "✅ Assets.xcassets já existe em $EXPECTED_ASSETS"
+          fi
+
+          # Swift files — iOSApp.swift e ContentView.swift
+          for FILE in iOSApp.swift ContentView.swift; do
+            REAL_FILE="$(pwd)/iosApp/iosApp/$FILE"
+            EXPECTED_FILE="$(pwd)/iosApp/$FILE"
+
+            if [ ! -f "$EXPECTED_FILE" ]; then
+              if [ -f "$REAL_FILE" ]; then
+                cp "$REAL_FILE" "$EXPECTED_FILE"
+                echo "✅ $FILE copiado para iosApp/"
+              else
+                echo "⚠️  $FILE não encontrado em iosApp/iosApp/ — listando arquivos Swift:"
+                find "$(pwd)/iosApp/iosApp" -name "*.swift" 2>/dev/null
+              fi
+            else
+              echo "✅ $FILE já existe no lugar certo"
+            fi
+          done
+
       - name: Build e archive sem assinatura
         script: |
           xcodebuild \
             -workspace iosApp/iosApp.xcworkspace \
             -scheme iosApp \
-            -configuration Debug \
             -destination 'generic/platform=iOS' \
             -archivePath "$CM_BUILD_DIR/iosApp.xcarchive" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_ALLOWED=NO \
-            SUPABASE_URL="$SUPABASE_URL" \
-            SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            "SUPABASE_URL=$SUPABASE_URL" \
+            "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" \
             archive
 
       - name: Empacotar .ipa para sideload
         script: |
           mkdir -p "$CM_BUILD_DIR/Payload"
-          APP_PATH=$(find "$CM_BUILD_DIR/iosApp.xcarchive/Products/Applications" -name "*.app" | head -1)
-          echo "App encontrado: $APP_PATH"
+
+          APP_PATH=$(find "$CM_BUILD_DIR/iosApp.xcarchive/Products/Applications" \
+            -name "*.app" -maxdepth 1 | head -1)
+
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ .app não encontrado no archive."
+            find "$CM_BUILD_DIR/iosApp.xcarchive" -name "*.app" -type d
+            exit 1
+          fi
+
+          echo "✅ App encontrado: $APP_PATH"
           cp -r "$APP_PATH" "$CM_BUILD_DIR/Payload/"
+
           cd "$CM_BUILD_DIR"
           zip -r iosApp.ipa Payload/
-          echo "✅ .ipa gerado!"
+          echo "✅ iosApp.ipa gerado com sucesso!"
 
     artifacts:
       - $CM_BUILD_DIR/iosApp.ipa
@@ -101,7 +149,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - seu@email.com
+          - thalesrian0@gmail.com
         notify:
           success: true
           failure: true
