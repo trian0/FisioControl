@@ -1,0 +1,12 @@
+[build]
+  base = "."
+  command = "echo \"SUPABASE_URL=$SUPABASE_URL\" >> local.properties && echo \"SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY\" >> local.properties && ./gradlew :composeApp:wasmJsBrowserDistribution"
+  publish = "composeApp/build/dist/wasmJs/productionExecutable"
+
+[build.environment]
+  JAVA_VERSION = "17"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
